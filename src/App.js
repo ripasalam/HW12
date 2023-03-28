@@ -1,55 +1,152 @@
+import { useState } from 'react';
+import { Button, ChakraProvider, Box, VStack, Text, Flex} from '@chakra-ui/react';
+import { createSlice, configureStore } from '@reduxjs/toolkit'
+import { Provider, useDispatch, useSelector } from 'react-redux';
 
-import * as React from 'react';
 
+const tictactoe = createSlice ({
+    name: "tictactoe",
+    initialState:{
+        squares: Array(9).fill(null),
+        currentStep: 0,
+        winner: null,
+        nextValue: 'X',
+        status: 'Next player: X',
+    },
+    reducers:{
+      selectSquare: (state, action)=>{
+        if (!state.winner && !state.squares[action.payload]){
+           const newSquares = [...state.squares]
+           newSquares[action.payload] = calculateNextValue(newSquares)
+           const nextValue = calculateNextValue(newSquares)
+           const winner = calculateWinner(newSquares)
+           const status = calculateStatus(winner, newSquares, nextValue)
+            return {
+              squares: newSquares,
+              winner,
+              nextValue,
+              status
+            }        
+        }              
+      },
+      restart: () => {
+          const newSquares = Array(9).fill(null)
+          const nextValue = calculateNextValue(newSquares)
+          const winner = calculateWinner(newSquares)
+          const status = calculateStatus(winner, newSquares, nextValue)
+
+          return {
+            squares: newSquares,
+            winner,
+            nextValue,
+            status
+          }   
+      }
+
+    } 
+    
+})
+
+const {selectSquare, restart} = tictactoe.actions
+
+
+const store = configureStore({
+  reducer: {
+    reducer: tictactoe.reducer,
+  },
+})
 function Board() {
-  const squares = Array(9).fill(null);
-  function selectSquare(square) {
 
-  }
+  const {status, squares} = useSelector(state=> state.reducer);
+  
+  const dispatch = useDispatch();
 
-  function restart() {
+  function selectSquareHandler(squareIndex){
+    dispatch(selectSquare(squareIndex))
   }
+  // const [squares, setSequares] = useState(Array(9).fill(null))
+
+  // const nextValue = calculateNextValue(squares)
+  // const winner = calculateWinner(squares)
+  // const status = calculateStatus(winner, squares, nextValue)
+
+
+
+  // function selectSquare(square) {
+  //   if (winner || squares[square]){
+  //     return;
+  //   }
+
+  //   const squaresCopy = [...squares];
+  //   squaresCopy[square] = nextValue;
+  //   setSequares(squaresCopy)
+
+  // }
+
+  // function restart() {
+  //   setSequares(Array(9).fill(null))
+  // }
 
   function renderSquare(i) {
     return (
-      <button className="square" onClick={() => selectSquare(i)}>
+      <Button 
+        w='100px'
+        h='100px'
+        variant="outline"
+        borderWidth="4px"
+        borderColor="gray.400"
+        fontSize="4xl" 
+        onClick={() => selectSquareHandler(i)} >
         {squares[i]}
-      </button>
+      </Button>
+    
     );
   }
 
   return (
-    <div>
-      <div >STATUS</div>
-      <div >
+    <VStack >
+      <Text fontSize="2xl" fontWeight="bold" mb={6}>
+        {status}
+      </Text>
+      <Flex >
         {renderSquare(0)}
         {renderSquare(1)}
         {renderSquare(2)}
-      </div>
-      <div >
+      </Flex>
+      <Flex mt={["-0rem !important"]} >
         {renderSquare(3)}
         {renderSquare(4)}
         {renderSquare(5)}
-      </div>
-      <div >
+      </Flex>
+      <Flex mt={["-0rem !important"]} >
         {renderSquare(6)}
         {renderSquare(7)}
         {renderSquare(8)}
-      </div>
-      <button onClick={restart}>
-        restart
-      </button>
-    </div>
+      </Flex>
+    </VStack>
+  
   );
 }
 
 function Game() {
+  const dispatch = useDispatch();
+
+  function handleRestart(){
+    dispatch(restart())
+  }
   return (
-    <div >
-      <div >
-        <Board />
-      </div>
-    </div>
+    <>
+      <Box bg="gray.100" h='100vh' p={10}>
+        <Box maxW="md"  mx="auto" p={6} bg="white" borderRadius={'lg'}>
+             <Board />
+             <VStack >
+               <Button fontSize="xl" size="md"  onClick={handleRestart} mt={4}  colorScheme= 'teal' >
+                Restart
+              </Button>
+             </VStack>
+        </Box>
+      </Box>
+    </>
   );
 }
 
@@ -89,7 +186,13 @@ function calculateWinner(squares) {
 }
 
 function App() {
-  return <Game />;
+  return (
+    <ChakraProvider>
+      <Provider store = {store}>
+        <Game />
+      </Provider>
+    </ChakraProvider>  
+  )
 }
 
 export default App;
